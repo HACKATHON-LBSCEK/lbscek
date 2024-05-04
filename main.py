@@ -130,7 +130,22 @@ import string
 # Function to generate a random alphanumeric string
 def generate_random_string(length):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+@app.route('/search_reports', methods=['GET'])
+def search_reports():
+    search_mobile = request.args.get('mobile')
+    search_name = request.args.get('name')
+    search_email = request.args.get('email')
 
+    query = {}
+    if search_mobile:
+        query['mobile_number'] = search_mobile
+    if search_name:
+        query['patient_name'] = {'$regex': f'^{search_name}', '$options': 'i'}  # Case-insensitive search
+    if search_email:
+        query['email'] = {'$regex': f'^{search_email}', '$options': 'i'}  # Case-insensitive search
+
+    results = list(lab_results_collection.find(query, {'_id': 0}))
+    return jsonify({'results': results})
 @app.route('/add_new_report', methods=['POST'])
 def add_new_report():
     if request.method == 'POST':
