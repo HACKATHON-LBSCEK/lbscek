@@ -20,6 +20,29 @@ connection_string = 'mongodb+srv://shanidkattakal:Shanid%40786@cluster0.8mckznv.
 client = MongoClient(connection_string)
 db = client['medical_lab']
 lab_results_collection = db['lab_results']
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+def send_otp_email(email, otp):
+    # Email configuration
+    sender_email = 'shanidsulthan@gmail.com'  # Your Gmail address
+    sender_password = 'pvhtbatctnnuktke'  # Your Gmail password
+    subject = 'Your OTP for Patient Login'
+    message = f'Your OTP is: {otp}'
+
+    # Create a MIMEText object to represent the email message
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = email
+    msg['Subject'] = subject
+    msg.attach(MIMEText(message, 'plain'))
+
+    # Connect to Gmail SMTP server with debugging enabled
+    with smtplib.SMTP('smtp.gmail.com', 587) as server:
+          # Enable debugging
+        server.starttls()  # Start TLS encryption
+        server.login(sender_email, sender_password)  # Login to Gmail SMTP server
+        server.sendmail(sender_email, email, msg.as_string())  # Send email
 
 @app.route('/report')
 def index1():
@@ -201,7 +224,7 @@ def login():
         otp = randint(100000, 999999)
         otp_storage[email] = otp
 
-        # Send OTP to the user via email (you need to implement this)
+        send_otp_email(email, otp)
 
         # Redirect to email OTP page
         return redirect(url_for('verify_otp', email=email))
