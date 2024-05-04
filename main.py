@@ -108,7 +108,9 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-
+@app.route('/images/<path:image_name>')
+def serve_image(image_name):
+    return send_from_directory('images', image_name)
 @app.route('/add_new_report', methods=['POST'])
 def add_new_report():
     if request.method == 'POST':
