@@ -16,15 +16,21 @@
             height: 100vh;
         }
         .container {
-            max-width: 400px;
+            width: 100vw; /* Full width */
+            height: 100vh; /* Full height */
             padding: 20px;
             background-color: #fff;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
         h2 {
             text-align: center;
             color: #008000;
+            margin-bottom: 20px;
         }
         label {
             display: block;
@@ -33,10 +39,10 @@
         }
         input[type="text"],
         input[type="password"] {
-            width: 100%;
-            padding: 8px;
+            width: calc(100% - 10px); /* Adjusted width for padding and margins */
+            padding: 10px;
             font-size: 16px;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             border: 1px solid #ccc;
             border-radius: 4px;
             box-sizing: border-box;
@@ -45,11 +51,11 @@
             background-color: #008000;
             color: #fff;
             border: none;
-            padding: 10px 20px;
+            padding: 12px 24px;
             font-size: 16px;
             border-radius: 4px;
             cursor: pointer;
-            width: 100%;
+            width: calc(100% - 40px); /* Adjusted width for padding and margins */
         }
         button[type="submit"]:hover {
             background-color: #005600;

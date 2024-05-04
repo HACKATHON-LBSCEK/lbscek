@@ -52,12 +52,12 @@
         }
         .result-container {
             margin-top: 20px;
-            border-top: 1-px solid #008000;
+            border-top: 1px solid #FFFFFF;
             padding-top: 20px;
         }
         .result-item {
             margin-bottom: 10px;
-            border: 1px solid #008000;
+            border: 1px solid #0056b3;
             border-radius: 4px;
             padding: 10px;
             background-color: #FFFFFF;
@@ -71,22 +71,13 @@
             width: 100%;
             height: 500px; /* Adjust height as needed */
         }
-        .anchor {
+        .enquiry-link {
             position: absolute;
-            top: 105px; /* Adjust as needed */
-            right: 10px; /* Adjust as needed */
-        }
-        .anchor a {
-            background-color: #007bff;
-            color: #fff;
+            top: 102px;
+            right: 10px;
             text-decoration: none;
-            padding: 5px 10px;
+            color: #007bff;
             font-size: 14px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .anchor a:hover {
-            background-color: #0056b3;
         }
     </style>
 </head>
@@ -129,20 +120,23 @@
                         // Create a div to display the lab result
                         const resultDiv = document.createElement('div');
                         resultDiv.classList.add('result-item');
-                        resultDiv.innerHTML = `<p><strong>Patient Name:</strong> ${labResult.patient_name}</p>
+
+                        // Add link for doctors enquiry
+                        if (labResult.status.toLowerCase() === "completed") {
+                            const enquiryLink = document.createElement('a');
+                            enquiryLink.href = 'https://www.example.com/doctors_enquiry'; // Replace with actual URL
+                            enquiryLink.textContent = 'Click here for doctors enquiry';
+                            enquiryLink.classList.add('enquiry-link');
+                            resultDiv.appendChild(enquiryLink);
+                        }
+
+                        resultDiv.innerHTML += `<p><strong>Patient Name:</strong> ${labResult.patient_name}</p>
                                                <p><strong>Test Name:</strong> ${labResult.test_name}</p>
                                                <p><strong>Status:</strong> ${labResult.status}</p>
                                                <embed class="pdf-embed" src="${labResult.pdf_url}" type="application/pdf" />`;
 
                         // Append the result div to labResultsDiv
                         labResultsDiv.appendChild(resultDiv);
-
-                        // Create the anchor link
-                        const anchorLink = document.createElement('a');
-                        anchorLink.href = "https://www.freecodecamp.org/learn/2022/responsive-web-design/learn-html-forms-by-building-a-registration-form/step-64";
-                        anchorLink.textContent = "Click here for doctors enquiry";
-                        anchorLink.classList.add('anchor');
-                        resultDiv.appendChild(anchorLink);
                     })
                     .catch(error => console.error('Error fetching lab result:', error));
             });
