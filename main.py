@@ -26,7 +26,7 @@ def get_lab_results():
                 'pdf_url': f"/pdf/{result['url']}",
                 'patient_name': result['patient_name'],
                 'test_name': result['test_name'],
-                'result': result['result']
+                'status': result['status']
             }
             return jsonify({'lab_result': lab_result}), 200
         else:
