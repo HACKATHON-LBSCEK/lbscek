@@ -111,6 +111,16 @@ def allowed_file(filename):
 @app.route('/images/<path:image_name>')
 def serve_image(image_name):
     return send_from_directory('images', image_name)
+from bson import ObjectId  # Import ObjectId for generating unique IDs
+
+import time
+import random
+import string
+
+# Function to generate a random alphanumeric string
+def generate_random_string(length):
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+
 @app.route('/add_new_report', methods=['POST'])
 def add_new_report():
     if request.method == 'POST':
@@ -118,20 +128,26 @@ def add_new_report():
         patient_name = data.get('patient_name')
         mobile_number = data.get('mobile_number')
 
+        # Generate a unique alphanumeric report ID
+        timestamp = int(time.time())  # Get current timestamp
+        random_string = generate_random_string(10 - len(str(timestamp)))  # Generate random string to make total length 10
+        report_id = str(timestamp) + random_string
+
         # Create a new report in the database with status set to 'pending'
         new_report = {
+            'r_id': report_id,  # Include the unique report ID
             'patient_name': patient_name,
             'mobile_number': mobile_number,
             'status': 'pending',
-
-            'lab_username':session['lab_username']
+            'lab_username': session.get('lab_username')  # Ensure 'lab_username' exists in session
         }
         # Insert the new report into your MongoDB collection
         lab_results_collection.insert_one(new_report)
 
-        return jsonify({'message': 'New report added successfully'}), 200
+        return jsonify({'message': 'New report added successfully', 'r_id': report_id}), 200
     else:
         return jsonify({'error': 'Method not allowed'}), 405
+
 @app.route('/pdf/<path:filename>')
 def pdf(filename):
     return send_from_directory('pdf', filename)
