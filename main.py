@@ -54,12 +54,22 @@ def get_lab_results():
     if report_id:
         result = lab_results_collection.find_one({'r_id': report_id})
         if result:
-            lab_result = {
-                'pdf_url': f"/pdf/{result['url']}",
-                'patient_name': result['patient_name'],
-                'test_name': result['test_name'],
-                'status': result['status']
-            }
+            lab_result = {}
+
+            if 'url' in result:
+                lab_result['pdf_url'] = f"/pdf/{result['url']}"
+
+            if 'patient_name' in result:
+                lab_result['patient_name'] = result['patient_name']
+
+            if 'test_name' in result:
+                lab_result['test_name'] = result['test_name']
+
+            if 'status' in result:
+                lab_result['status'] = result['status']
+
+
+
             return jsonify({'lab_result': lab_result}), 200
         else:
             return jsonify({'error': 'Report not found'}), 404
@@ -127,7 +137,7 @@ def add_new_report():
         data = request.json
         patient_name = data.get('patient_name')
         mobile_number = data.get('mobile_number')
-
+        email=data.get('email')
         # Generate a unique alphanumeric report ID
         timestamp = int(time.time())  # Get current timestamp
         random_string = generate_random_string(10 - len(str(timestamp)))  # Generate random string to make total length 10
@@ -139,7 +149,8 @@ def add_new_report():
             'patient_name': patient_name,
             'mobile_number': mobile_number,
             'status': 'pending',
-            'lab_username': session.get('lab_username')  # Ensure 'lab_username' exists in session
+            'lab_username': session.get('lab_username'),
+            'email' : email# Ensure 'lab_username' exists in session
         }
         # Insert the new report into your MongoDB collection
         lab_results_collection.insert_one(new_report)
