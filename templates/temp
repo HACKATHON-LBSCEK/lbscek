@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Lab Report Management System</title>
+</head>
+<body>
+    <h1>Medical Lab Report Management System</h1>
+    <div id="labResults"></div>
+    <form id="reportForm">
+        <label for="reportId">Enter Report ID:</label>
+        <input type="text" id="reportId" name="reportId">
+        <button type="submit">Submit</button>
+    </form>
+
+    <script>
+        document.getElementById('reportForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent the form from submitting normally
+
+            const reportId = document.getElementById('reportId').value; // Get the value from the input
+
+            // Send a request to the endpoint with the reportId
+            fetch(`/lab_results?r_id=${reportId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Check if the JSON response contains the expected structure
+                    if (!data || !data.lab_result) {
+                        throw new Error('Invalid JSON response format');
+                    }
+
+                    const labResult = data.lab_result;
+                    const labResultsDiv = document.getElementById('labResults');
+                    labResultsDiv.innerHTML = ''; // Clear previous results
+
+                    // Create a div to display the lab result
+                    const resultDiv = document.createElement('div');
+                    resultDiv.innerHTML = `<p><strong>Patient Name:</strong> ${labResult.patient_name}</p>
+                                           <p><strong>Test Name:</strong> ${labResult.test_name}</p>
+                                           <p><strong>Result:</strong> ${labResult.result}</p>`;
+                    labResultsDiv.appendChild(resultDiv);
+                })
+                .catch(error => console.error('Error fetching lab result:', error));
+        });
+    </script>
+</body>
+</html>
