@@ -108,6 +108,28 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+
+@app.route('/add_new_report', methods=['POST'])
+def add_new_report():
+    if request.method == 'POST':
+        data = request.json
+        patient_name = data.get('patient_name')
+        mobile_number = data.get('mobile_number')
+
+        # Create a new report in the database with status set to 'pending'
+        new_report = {
+            'patient_name': patient_name,
+            'mobile_number': mobile_number,
+            'status': 'pending',
+
+            'lab_username':session['lab_username']
+        }
+        # Insert the new report into your MongoDB collection
+        lab_results_collection.insert_one(new_report)
+
+        return jsonify({'message': 'New report added successfully'}), 200
+    else:
+        return jsonify({'error': 'Method not allowed'}), 405
 @app.route('/pdf/<path:filename>')
 def pdf(filename):
     return send_from_directory('pdf', filename)

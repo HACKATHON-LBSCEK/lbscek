@@ -11,6 +11,16 @@
 <body>
     <div class="container">
         <h2>Lab Dashboard</h2>
+
+        <!-- Form to add a new initial report -->
+        <form id="new-report-form">
+            <label for="patient-name">Patient Name:</label>
+            <input type="text" id="patient-name" name="patient_name" required>
+            <label for="mobile-number">Mobile Number:</label>
+            <input type="text" id="mobile-number" name="mobile_number" required>
+            <button type="button" onclick="addNewReport()">Add New Report</button>
+        </form>
+
         {% for report in lab_reports %}
         <div class="report">
             <h3>Report ID: {{ report.r_id }}</h3>
@@ -51,6 +61,29 @@
                 // Handle network errors here
             };
             xhr.send(formData);
+        }
+
+        function addNewReport() {
+            const patientNameInput = document.getElementById('patient-name').value;
+            const mobileNumberInput = document.getElementById('mobile-number').value;
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/add_new_report', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    // Refresh the page or update the UI as needed
+                    window.location.reload();
+                } else {
+                    console.error('Error adding new report:', xhr.responseText);
+                    // Handle errors here
+                }
+            };
+            xhr.onerror = function() {
+                console.error('Error adding new report: Network error');
+                // Handle network errors here
+            };
+            xhr.send(JSON.stringify({ "patient_name": patientNameInput, "mobile_number": mobileNumberInput }));
         }
     </script>
 </body>
