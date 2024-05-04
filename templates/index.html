@@ -114,7 +114,7 @@
                     resultDiv.classList.add('result-item');
                     resultDiv.innerHTML = `<p><strong>Patient Name:</strong> ${labResult.patient_name}</p>
                                            <p><strong>Test Name:</strong> ${labResult.test_name}</p>
-                                           <p><strong>Result:</strong> ${labResult.result}</p>
+                                           <p><strong>Status</strong> ${labResult.status}</p>
                                            <embed class="pdf-embed" src="${labResult.pdf_url}" type="application/pdf" />`;
 
                     labResultsDiv.appendChild(resultDiv);
