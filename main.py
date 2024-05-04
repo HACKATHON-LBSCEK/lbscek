@@ -6,7 +6,9 @@ import random
 from flask import Flask, request, render_template, redirect, url_for, session, jsonify
 from werkzeug.utils import secure_filename
 import os
-
+from flask import Flask, render_template, request, redirect, url_for
+from pymongo import MongoClient
+from random import randint
 import string
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Set your secret key here
@@ -18,9 +20,32 @@ connection_string = 'mongodb+srv://shanidkattakal:Shanid%40786@cluster0.8mckznv.
 client = MongoClient(connection_string)
 db = client['medical_lab']
 lab_results_collection = db['lab_results']
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+def send_otp_email(email, otp):
+    # Email configuration
+    sender_email = 'shanidsulthan@gmail.com'  # Your Gmail address
+    sender_password = 'pvhtbatctnnuktke'  # Your Gmail password
+    subject = 'Your OTP for Patient Login'
+    message = f'Your OTP is: {otp}'
 
-@app.route('/')
-def index():
+    # Create a MIMEText object to represent the email message
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = email
+    msg['Subject'] = subject
+    msg.attach(MIMEText(message, 'plain'))
+
+    # Connect to Gmail SMTP server with debugging enabled
+    with smtplib.SMTP('smtp.gmail.com', 587) as server:
+          # Enable debugging
+        server.starttls()  # Start TLS encryption
+        server.login(sender_email, sender_password)  # Login to Gmail SMTP server
+        server.sendmail(sender_email, email, msg.as_string())  # Send email
+
+@app.route('/report')
+def index1():
     return render_template('index.html')
 users_collection = db['users']
 labs_collection = db['labs']
@@ -130,7 +155,22 @@ import string
 # Function to generate a random alphanumeric string
 def generate_random_string(length):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+@app.route('/search_reports', methods=['GET'])
+def search_reports():
+    search_mobile = request.args.get('mobile')
+    search_name = request.args.get('name')
+    search_email = request.args.get('email')
 
+    query = {}
+    if search_mobile:
+        query['mobile_number'] = search_mobile
+    if search_name:
+        query['patient_name'] = {'$regex': f'^{search_name}', '$options': 'i'}  # Case-insensitive search
+    if search_email:
+        query['email'] = {'$regex': f'^{search_email}', '$options': 'i'}  # Case-insensitive search
+
+    results = list(lab_results_collection.find(query, {'_id': 0}))
+    return jsonify({'results': results})
 @app.route('/add_new_report', methods=['POST'])
 def add_new_report():
     if request.method == 'POST':
@@ -162,6 +202,58 @@ def add_new_report():
 @app.route('/pdf/<path:filename>')
 def pdf(filename):
     return send_from_directory('pdf', filename)
+
+
+
+otp_storage = {}
+
+@app.route('/')
+def index():
+    return render_template('login.html')
+
+@app.route('/login', methods=['POST'])
+def login():
+    email = request.form['email']
+    phone = request.form['phone']
+
+    # Check if email and phone exist in the reports collection
+    user_report = lab_results_collection.find_one({"email": email, "mobile_number": phone})
+
+    if user_report:
+        # Generate OTP and store it (replace this with a more secure method)
+        otp = randint(100000, 999999)
+        otp_storage[email] = otp
+
+        send_otp_email(email, otp)
+
+        # Redirect to email OTP page
+        return redirect(url_for('verify_otp', email=email))
+    else:
+        # User not found, redirect back to login page
+        return jsonify({'results': "eror"})
+
+
+@app.route('/verify_otp/<email>', methods=['GET', 'POST'])
+def verify_otp(email):
+    if request.method == 'POST':
+        otp = int(request.form['otp'])
+
+        # Verify OTP
+        stored_otp = otp_storage.get(email)
+        if stored_otp and otp == stored_otp:
+            # Successful OTP verification, redirect to dashboard
+            return redirect(url_for('dashboard'))
+        else:
+            # Invalid OTP, redirect back to email OTP page
+            return redirect(url_for('verify_otp', email=email))
+    else:
+        # Render email OTP verification page
+        return render_template('verify_otp.html', email=email)
+
+@app.route('/dashboard')
+def dashboard():
+    # Render dashboard template or perform any other action for authenticated users
+    return "Welcome to the patient dashboard!"
 
 if __name__ == '__main__':
     app.run(debug=True)

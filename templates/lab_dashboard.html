@@ -17,7 +17,6 @@
             background-color: #1a1a2e;
             margin: 0;
             padding: 0;
-
         }
         *,
 *::before,
@@ -51,7 +50,8 @@
             margin-bottom: 5px;
             color: #333;
         }
-        input[type="text"] {
+        input[type="text"],
+        input[type="email"] {
             width: calc(50% - 10px);
             padding: 8px;
             font-size: 16px;
@@ -146,6 +146,15 @@
 <body>
     <div class="container">
         <h2>Lab Dashboard</h2>
+        <form id="searchForm">
+            <label for="searchMobile">Search by Mobile Number:</label>
+            <input type="text" id="searchMobile" name="mobile">
+            <label for="searchName">Search by Patient Name:</label>
+            <input type="text" id="searchName" name="name">
+            <label for="searchEmail">Search by Email:</label>
+            <input type="email" id="searchEmail" name="email">
+            <button type="button" onclick="searchReports()">Search</button>
+        </form>
 
         <!-- Form to add a new initial report -->
         <form id="new-report-form">
@@ -153,13 +162,17 @@
             <input type="text" id="patient-name" name="patient_name" required>
             <label for="mobile-number">Mobile Number:</label>
             <input type="text" id="mobile-number" name="mobile_number" required>
-            <label for="email">email :</label>
-            <input type="text" id="email" name="mobile_number" required>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
             <button type="button" onclick="addNewReport()">Add New Report</button>
         </form>
 
-        {% for report in lab_reports %}
-        <div class="report">
+        <div id="labReports"></div>
+
+    </div>
+       {% for report in lab_reports %}
+        <div class="container" id="labReports">
+
             <h3>Report ID: {{ report.r_id }}</h3>
             <p>Patient Name: {{ report.patient_name }}</p>
             <p>Mobile Number: {{ report.mobile_number }}</p>
@@ -167,17 +180,17 @@
             {% if report.status == 'pending' %}
             <form class="result-form" enctype="multipart/form-data">
                 <label for="result">Result PDF:</label>
-                <input type="file" id="result" name="result" accept="application/pdf" required>
+                <!-- Here is the corrected line with dynamic ID -->
+                <input type="file" id="result_{{ report.r_id }}" name="result" accept="application/pdf" required>
                 <button type="button" onclick="uploadResult('{{ report.r_id }}')">Upload Result</button>
             </form>
             {% endif %}
         </div>
         {% endfor %}
     </div>
-
     <script>
         function uploadResult(reportId) {
-            const fileInput = document.getElementById('result');
+            const fileInput = document.getElementById(`result_${reportId}`);
             const file = fileInput.files[0];
             const formData = new FormData();
             formData.append('result', file);
@@ -220,7 +233,69 @@
                 console.error('Error adding new report: Network error');
                 // Handle network errors here
             };
-            xhr.send(JSON.stringify({ "patient_name": patientNameInput, "mobile_number": mobileNumberInput }));
+            xhr.send(JSON.stringify({ "patient_name": patientNameInput, "mobile_number": mobileNumberInput,"email": emailInput }));
+        }
+
+        function searchReports() {
+            const searchMobile = document.getElementById('searchMobile').value;
+            const searchName = document.getElementById('searchName').value;
+            const searchEmail = document.getElementById('searchEmail').value;
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', `/search_reports?mobile=${searchMobile}&name=${searchName}&email=${searchEmail}`, true);
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    const data = JSON.parse(xhr.responseText);
+
+                    clearReports(); // Clear existing reports
+                    displayReports(data.results); // Display new search results
+                } else {
+                    console.error('Error searching reports:', xhr.responseText);
+                    // Handle errors here
+                }
+            };
+            xhr.onerror = function() {
+                console.error('Error searching reports: Network error');
+                // Handle network errors here
+            };
+            xhr.send();
+        }
+
+        // Function to clear existing reports
+        function clearReports() {
+            const labReportsDiv = document.getElementById('labReports');
+            // Clear all child elements
+            while (labReportsDiv.firstChild) {
+                labReportsDiv.removeChild(labReportsDiv.firstChild);
+            }
+        }
+
+        // Function to display lab reports
+        function displayReports(results) {
+            const labReportsDiv = document.getElementById('labReports');
+
+            if (results.length === 0) {
+                labReportsDiv.innerHTML = '<p>No matching reports found.</p>';
+                return;
+            }
+
+            // Populate lab reports
+            results.forEach(report => {
+                const reportDiv = document.createElement('div');
+                reportDiv.classList.add('report');
+                reportDiv.innerHTML = `<h3>Report ID: ${report.r_id}</h3>
+                                       <p>Patient Name: ${report.patient_name}</p>
+                                       <p>Mobile Number: ${report.mobile_number}</p>
+                                       <p>Status: ${report.status}</p>`;
+                if (report.status === 'pending') {
+                    reportDiv.innerHTML += `<form class="result-form" enctype="multipart/form-data">
+                                                <label for="result_${report.r_id}">Result PDF:</label>
+                                                <input type="file" id="result_${report.r_id}" name="result" accept="application/pdf" required>
+                                                <button type="button" onclick="uploadResult('${report.r_id}')">Upload Result</button>
+                                            </form>`;
+                }
+                labReportsDiv.appendChild(reportDiv);
+            });
         }
     </script>
 </body>
