@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab Dashboard</title>
+    <style>
+        /* Your CSS styles */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Lab Dashboard</h2>
+        {% for report in lab_reports %}
+        <div class="report">
+            <h3>Report ID: {{ report.r_id }}</h3>
+            <p>Patient Name: {{ report.patient_name }}</p>
+            <p>Mobile Number: {{ report.mobile_number }}</p>
+            <p>Status: {{ report.status }}</p>
+            {% if report.status == 'pending' %}
+            <form class="result-form" enctype="multipart/form-data">
+                <label for="result">Result PDF:</label>
+                <input type="file" id="result" name="result" accept="application/pdf" required>
+                <button type="button" onclick="uploadResult('{{ report.r_id }}')">Upload Result</button>
+            </form>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        function uploadResult(reportId) {
+            const fileInput = document.getElementById('result');
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('result', file);
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/upload_result/' + reportId, true);
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    // Refresh the page or update the UI as needed
+                    window.location.reload();
+                } else {
+                    console.error('Error uploading result:', xhr.responseText);
+                    // Handle errors here
+                }
+            };
+            xhr.onerror = function() {
+                console.error('Error uploading result: Network error');
+                // Handle network errors here
+            };
+            xhr.send(formData);
+        }
+    </script>
+</body>
+</html>
