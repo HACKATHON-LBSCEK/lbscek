@@ -22,20 +22,30 @@
             
             // Send a request to the endpoint with the reportId
             fetch(`/lab_results?r_id=${reportId}`)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    const labResults = data.lab_results;
+                    // Check if the JSON response contains the expected structure
+                    if (!data || !data.lab_result) {
+                        throw new Error('Invalid JSON response format');
+                    }
+
+                    const labResult = data.lab_result;
                     const labResultsDiv = document.getElementById('labResults');
                     labResultsDiv.innerHTML = ''; // Clear previous results
-                    labResults.forEach(result => {
-                        const resultDiv = document.createElement('div');
-                        resultDiv.innerHTML = `<p><strong>Patient Name:</strong> ${result.patient_name}</p>
-                                               <p><strong>Test Name:</strong> ${result.test_name}</p>
-                                               <p><strong>Result:</strong> ${result.result}</p>`;
-                        labResultsDiv.appendChild(resultDiv);
-                    });
+
+                    // Create a div to display the lab result
+                    const resultDiv = document.createElement('div');
+                    resultDiv.innerHTML = `<p><strong>Patient Name:</strong> ${labResult.patient_name}</p>
+                                           <p><strong>Test Name:</strong> ${labResult.test_name}</p>
+                                           <p><strong>Result:</strong> ${labResult.result}</p>`;
+                    labResultsDiv.appendChild(resultDiv);
                 })
-                .catch(error => console.error('Error fetching lab results:', error));
+                .catch(error => console.error('Error fetching lab result:', error));
         });
     </script>
 </body>
