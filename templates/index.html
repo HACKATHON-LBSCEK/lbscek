@@ -94,53 +94,59 @@
         <div id="labResults" class="result-container"></div>
 
         <script>
-            document.getElementById('reportForm').addEventListener('submit', function(event) {
-                event.preventDefault(); // Prevent the form from submitting normally
+    document.getElementById('reportForm').addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent the form from submitting normally
 
-                const reportId = document.getElementById('reportId').value; // Get the value from the input
+        const reportId = document.getElementById('reportId').value; // Get the value from the input
 
-                // Send a request to the endpoint with the reportId
-                fetch(`/lab_results?r_id=${reportId}`)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        // Check if the JSON response contains the expected structure
-                        if (!data || !data.lab_result) {
-                            throw new Error('Invalid JSON response format');
-                        }
+        // Send a request to the endpoint with the reportId
+        fetch(`/lab_results?r_id=${reportId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Check if the JSON response contains the expected structure
+                if (!data || !data.lab_result) {
+                    throw new Error('Invalid JSON response format');
+                }
 
-                        const labResult = data.lab_result;
-                        const labResultsDiv = document.getElementById('labResults');
-                        labResultsDiv.innerHTML = ''; // Clear previous results
+                const labResult = data.lab_result;
+                const labResultsDiv = document.getElementById('labResults');
+                labResultsDiv.innerHTML = ''; // Clear previous results
 
-                        // Create a div to display the lab result
-                        const resultDiv = document.createElement('div');
-                        resultDiv.classList.add('result-item');
+                // Create a div to display the lab result
+                const resultDiv = document.createElement('div');
+                resultDiv.classList.add('result-item');
 
-                        // Add link for doctors enquiry
-                        if (labResult.status.toLowerCase() === "completed") {
-                            const enquiryLink = document.createElement('a');
-                            enquiryLink.href = 'https://www.example.com/doctors_enquiry'; // Replace with actual URL
-                            enquiryLink.textContent = 'Click here for doctors enquiry';
-                            enquiryLink.classList.add('enquiry-link');
-                            resultDiv.appendChild(enquiryLink);
-                        }
+                resultDiv.innerHTML += `<p><strong>Patient Name:</strong> ${labResult.patient_name}</p>
+                                       <p><strong>Test Name:</strong> ${labResult.test_name}</p>
+                                       <p><strong>Status:</strong> ${labResult.status}</p>`;
 
-                        resultDiv.innerHTML += `<p><strong>Patient Name:</strong> ${labResult.patient_name}</p>
-                                               <p><strong>Test Name:</strong> ${labResult.test_name}</p>
-                                               <p><strong>Status:</strong> ${labResult.status}</p>
-                                               <embed class="pdf-embed" src="${labResult.pdf_url}" type="application/pdf" />`;
+                // Add PDF embed and doctor's inquiry link only if status is "completed"
+                if (labResult.status.toLowerCase() === "completed") {
+                    // PDF embed
+                    resultDiv.innerHTML += `<embed class="pdf-embed" src="${labResult.pdf_url}" type="application/pdf" />`;
 
-                        // Append the result div to labResultsDiv
-                        labResultsDiv.appendChild(resultDiv);
-                    })
-                    .catch(error => console.error('Error fetching lab result:', error));
-            });
-        </script>
+                    // Doctor's inquiry link
+                    const enquiryLink = document.createElement('a');
+                    enquiryLink.href = 'https://www.example.com/doctors_enquiry'; // Replace with actual URL
+                    enquiryLink.textContent = 'Click here for doctor\'s enquiry';
+                    enquiryLink.classList.add('enquiry-link');
+                    enquiryLink.target = '_blank'; // Open link in new tab
+                    resultDiv.appendChild(enquiryLink);
+                }
+
+                // Append the result div to labResultsDiv
+                labResultsDiv.appendChild(resultDiv);
+            })
+            .catch(error => console.error('Error fetching lab result:', error));
+    });
+</script>
+
+
     </div>
 </body>
 </html>
