@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_from_directory
 from pymongo import MongoClient
 
 app = Flask(__name__)
@@ -23,6 +23,7 @@ def get_lab_results():
         result = lab_results_collection.find_one({'r_id': report_id})
         if result:
             lab_result = {
+                'pdf_url': f"/pdf/{result['url']}",
                 'patient_name': result['patient_name'],
                 'test_name': result['test_name'],
                 'result': result['result']
@@ -32,6 +33,10 @@ def get_lab_results():
             return jsonify({'error': 'Report not found'}), 404
     else:
         return jsonify({'error': 'Report ID parameter is required'}), 400
+
+@app.route('/pdf/<path:filename>')
+def pdf(filename):
+    return send_from_directory('pdf', filename)
 
 if __name__ == '__main__':
     app.run(debug=True)

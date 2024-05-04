@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MEDICAL LAB REPORT MANAGEMENT SYSTEM</title>
+    <title>SEARCH LAB REPORT MANAGEMENT SYSTEM</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -66,6 +66,10 @@
             font-weight: bold;
             margin-right: 5px;
         }
+        .pdf-embed {
+            width: 100%;
+            height: 500px; /* Adjust height as needed */
+        }
     </style>
 </head>
 <body>
@@ -110,7 +114,9 @@
                     resultDiv.classList.add('result-item');
                     resultDiv.innerHTML = `<p><strong>Patient Name:</strong> ${labResult.patient_name}</p>
                                            <p><strong>Test Name:</strong> ${labResult.test_name}</p>
-                                           <p><strong>Result:</strong> ${labResult.result}</p>`;
+                                           <p><strong>Result:</strong> ${labResult.result}</p>
+                                           <embed class="pdf-embed" src="${labResult.pdf_url}" type="application/pdf" />`;
+
                     labResultsDiv.appendChild(resultDiv);
                 })
                 .catch(error => console.error('Error fetching lab result:', error));
