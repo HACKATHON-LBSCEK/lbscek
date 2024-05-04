@@ -6,7 +6,9 @@ import random
 from flask import Flask, request, render_template, redirect, url_for, session, jsonify
 from werkzeug.utils import secure_filename
 import os
-
+from flask import Flask, render_template, request, redirect, url_for
+from pymongo import MongoClient
+from random import randint
 import string
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Set your secret key here
@@ -19,8 +21,8 @@ client = MongoClient(connection_string)
 db = client['medical_lab']
 lab_results_collection = db['lab_results']
 
-@app.route('/')
-def index():
+@app.route('/report')
+def index1():
     return render_template('index.html')
 users_collection = db['users']
 labs_collection = db['labs']
@@ -177,6 +179,58 @@ def add_new_report():
 @app.route('/pdf/<path:filename>')
 def pdf(filename):
     return send_from_directory('pdf', filename)
+
+
+
+otp_storage = {}
+
+@app.route('/')
+def index():
+    return render_template('login.html')
+
+@app.route('/login', methods=['POST'])
+def login():
+    email = request.form['email']
+    phone = request.form['phone']
+
+    # Check if email and phone exist in the reports collection
+    user_report = lab_results_collection.find_one({"email": email, "mobile_number": phone})
+
+    if user_report:
+        # Generate OTP and store it (replace this with a more secure method)
+        otp = randint(100000, 999999)
+        otp_storage[email] = otp
+
+        # Send OTP to the user via email (you need to implement this)
+
+        # Redirect to email OTP page
+        return redirect(url_for('verify_otp', email=email))
+    else:
+        # User not found, redirect back to login page
+        return jsonify({'results': "eror"})
+
+
+@app.route('/verify_otp/<email>', methods=['GET', 'POST'])
+def verify_otp(email):
+    if request.method == 'POST':
+        otp = int(request.form['otp'])
+
+        # Verify OTP
+        stored_otp = otp_storage.get(email)
+        if stored_otp and otp == stored_otp:
+            # Successful OTP verification, redirect to dashboard
+            return redirect(url_for('dashboard'))
+        else:
+            # Invalid OTP, redirect back to email OTP page
+            return redirect(url_for('verify_otp', email=email))
+    else:
+        # Render email OTP verification page
+        return render_template('verify_otp.html', email=email)
+
+@app.route('/dashboard')
+def dashboard():
+    # Render dashboard template or perform any other action for authenticated users
+    return "Welcome to the patient dashboard!"
 
 if __name__ == '__main__':
     app.run(debug=True)
