@@ -10,7 +10,6 @@
             margin: 0;
             padding: 0;
             background-color: rgba(0, 0, 0, 0.5); /* Dimmed background color */
-
         }
         #container {
             position: relative;
@@ -40,7 +39,7 @@
             border-radius: 4px;
         }
         button[type="submit"] {
-            background-color: #008000;
+            background-color: #008000; /* Change button color to #008000 */
             color: #fff;
             border: none;
             padding: 10px 20px;
@@ -53,15 +52,16 @@
         }
         .result-container {
             margin-top: 20px;
-            border-top: 1px solid #007bff;
+            border-top: 1-px solid #008000;
             padding-top: 20px;
         }
         .result-item {
             margin-bottom: 10px;
-            border: 1px solid #007bff;
+            border: 1px solid #008000;
             border-radius: 4px;
             padding: 10px;
-            background-color: #edf5ff;
+            background-color: #FFFFFF;
+            position: relative; /* Ensure positioning context for absolute positioning */
         }
         .result-item strong {
             font-weight: bold;
@@ -70,6 +70,23 @@
         .pdf-embed {
             width: 100%;
             height: 500px; /* Adjust height as needed */
+        }
+        .anchor {
+            position: absolute;
+            top: 105px; /* Adjust as needed */
+            right: 10px; /* Adjust as needed */
+        }
+        .anchor a {
+            background-color: #007bff;
+            color: #fff;
+            text-decoration: none;
+            padding: 5px 10px;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .anchor a:hover {
+            background-color: #0056b3;
         }
     </style>
 </head>
@@ -84,45 +101,52 @@
         </form>
 
         <div id="labResults" class="result-container"></div>
+
+        <script>
+            document.getElementById('reportForm').addEventListener('submit', function(event) {
+                event.preventDefault(); // Prevent the form from submitting normally
+
+                const reportId = document.getElementById('reportId').value; // Get the value from the input
+
+                // Send a request to the endpoint with the reportId
+                fetch(`/lab_results?r_id=${reportId}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Check if the JSON response contains the expected structure
+                        if (!data || !data.lab_result) {
+                            throw new Error('Invalid JSON response format');
+                        }
+
+                        const labResult = data.lab_result;
+                        const labResultsDiv = document.getElementById('labResults');
+                        labResultsDiv.innerHTML = ''; // Clear previous results
+
+                        // Create a div to display the lab result
+                        const resultDiv = document.createElement('div');
+                        resultDiv.classList.add('result-item');
+                        resultDiv.innerHTML = `<p><strong>Patient Name:</strong> ${labResult.patient_name}</p>
+                                               <p><strong>Test Name:</strong> ${labResult.test_name}</p>
+                                               <p><strong>Status:</strong> ${labResult.status}</p>
+                                               <embed class="pdf-embed" src="${labResult.pdf_url}" type="application/pdf" />`;
+
+                        // Append the result div to labResultsDiv
+                        labResultsDiv.appendChild(resultDiv);
+
+                        // Create the anchor link
+                        const anchorLink = document.createElement('a');
+                        anchorLink.href = "https://www.freecodecamp.org/learn/2022/responsive-web-design/learn-html-forms-by-building-a-registration-form/step-64";
+                        anchorLink.textContent = "Click here for doctors enquiry";
+                        anchorLink.classList.add('anchor');
+                        resultDiv.appendChild(anchorLink);
+                    })
+                    .catch(error => console.error('Error fetching lab result:', error));
+            });
+        </script>
     </div>
-
-    <script>
-        document.getElementById('reportForm').addEventListener('submit', function(event) {
-            event.preventDefault(); // Prevent the form from submitting normally
-
-            const reportId = document.getElementById('reportId').value; // Get the value from the input
-
-            // Send a request to the endpoint with the reportId
-            fetch(`/lab_results?r_id=${reportId}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    // Check if the JSON response contains the expected structure
-                    if (!data || !data.lab_result) {
-                        throw new Error('Invalid JSON response format');
-                    }
-
-                    const labResult = data.lab_result;
-                    const labResultsDiv = document.getElementById('labResults');
-                    labResultsDiv.innerHTML = ''; // Clear previous results
-
-                    // Create a div to display the lab result
-                    const resultDiv = document.createElement('div');
-                    resultDiv.classList.add('result-item');
-                    resultDiv.innerHTML = `<p><strong>Patient Name:</strong> ${labResult.patient_name}</p>
-                                           <p><strong>Test Name:</strong> ${labResult.test_name}</p>
-                                           <p><strong>status:</strong> ${labResult.status}</p>
-                                           <p class="anchor"><a href="https://www.freecodecamp.org/learn/2022/responsive-web-design/learn-html-forms-by-building-a-registration-form/step-64">Click here for doctors enquiry<a></p>
-                                           <embed class="pdf-embed" src="${labResult.pdf_url}" type="application/pdf" />`;
-
-                    labResultsDiv.appendChild(resultDiv);
-                })
-                .catch(error => console.error('Error fetching lab result:', error));
-        });
-    </script>
 </body>
 </html>
