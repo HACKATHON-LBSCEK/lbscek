@@ -10,10 +10,10 @@
     <ul>
         {% for consultation in consultations %}
             <li>
-                Consultation ID: {{ consultation._id }}, Patient: {{ consultation.patient }},
+                Consultation ID: {{ consultation.report_id }}, Patient: {{ consultation.patient }},
                 <a href="/pdf/{{ consultation.pdf_url }}">View PDF</a><br>
                 Remarks: {{ consultation.remarks }}
-                <form action="/add_remarks/{{ consultation._id }}" method="POST" enctype="multipart/form-data">
+                <form action="/add_remarks/{{ consultation.report_id }}" method="POST" enctype="multipart/form-data">
                     <input type="file" name="file" accept=".pdf"><br>
                     <textarea name="remarks" placeholder="Add remarks"></textarea><br>
                     <button type="submit">Submit</button>

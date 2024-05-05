@@ -7,6 +7,7 @@
 </head>
 <body>
     <h1>Patient Dashboard</h1>
+    <h2>Lab Reports</h2>
     <ul>
         {% for report in reports %}
             <li>
@@ -18,13 +19,22 @@
                     <form action="/send_consultation" method="POST">
                         <input type="hidden" name="report_id" value="{{ report._id }}">
                         <select name="doctor">
-                            <option value="doctor1">Doctor 1</option>
-                            <option value="doctor2">Doctor 2</option>
+                            <option value="d1">Doctor 1</option>
+                            <option value="d2">Doctor 2</option>
                             <!-- Add other doctors dynamically -->
                         </select>
                         <button type="submit">Send for Consultation</button>
                     </form>
                 {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+
+    <h2>Consultations</h2>
+    <ul>
+        {% for consultation in consultations %}
+            <li>
+                Report ID: {{ consultation.report_id }}, Doctor: {{ consultation.doctor }}, Status: {{ consultation.status }}
             </li>
         {% endfor %}
     </ul>

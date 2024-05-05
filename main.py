@@ -9,10 +9,24 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
-
+from flask import Flask, request, jsonify, render_template, send_from_directory
+from pymongo import MongoClient
+from flask import Flask, request, render_template, redirect, url_for, session
+from pymongo import MongoClient
+import random
+from flask import Flask, request, render_template, redirect, url_for, session, jsonify
+from werkzeug.utils import secure_filename
+import os
+from flask import Flask, render_template, request, redirect, url_for
+from pymongo import MongoClient
+from random import randint
+import string
+from datetime import datetime
+import time
 # Initialize Flask app and set secret key
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
+otp_storage = {}
 
 # MongoDB connection
 connection_string = 'mongodb+srv://shanidkattakal:Shanid%40786@cluster0.8mckznv.mongodb.net/medical_lab'
@@ -26,6 +40,8 @@ consultations_collection = db['consultations']
 UPLOAD_FOLDER = 'pdf'
 ALLOWED_EXTENSIONS = {'pdf'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
 
 # Function to send OTP email
 def send_otp_email(email, otp):
@@ -44,7 +60,25 @@ def send_otp_email(email, otp):
         server.starttls()
         server.login(sender_email, sender_password)
         server.sendmail(sender_email, email, msg.as_string())
+@app.route('/pdf/<path:filename>')
+def pdf(filename):
+    return send_from_directory('pdf', filename)
+def send_id_email(email, otp):
+    sender_email = 'shanidsulthan@gmail.com'
+    sender_password = 'pvhtbatctnnuktke'
+    subject = 'Your Report id '
+    message = f'Your id is: {otp} under processing'
 
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = email
+    msg['Subject'] = subject
+    msg.attach(MIMEText(message, 'plain'))
+
+    with smtplib.SMTP('smtp.gmail.com', 587) as server:
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.sendmail(sender_email, email, msg.as_string())
 # Function to generate a random alphanumeric string
 def generate_random_string(length):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
@@ -64,6 +98,9 @@ def lab_login():
     return render_template('lab_login.html')
 
 # Route for lab dashboard
+@app.route('/')
+def index():
+    return render_template('login.html')
 @app.route('/lab_dashboard')
 def lab_dashboard():
     if 'lab_username' in session:
@@ -94,6 +131,9 @@ def upload_result(report_id):
         return redirect(url_for('lab_login'))
 
 # Route for searching reports
+@app.route('/images/<path:image_name>')
+def serve_image(image_name):
+    return send_from_directory('images', image_name)
 @app.route('/search_reports', methods=['GET'])
 def search_reports():
     search_mobile = request.args.get('mobile')
@@ -131,7 +171,9 @@ def add_new_report():
             'lab_username': session.get('lab_username'),
             'email': email
         }
+
         lab_results_collection.insert_one(new_report)
+        send_id_email(email,report_id)
         return jsonify({'message': 'New report added successfully', 'r_id': report_id}), 200
     else:
         return jsonify({'error': 'Method not allowed'}), 405
@@ -174,9 +216,15 @@ def dashboard():
         email = session['email']
         phone = session['phone']
         user_reports = lab_results_collection.find({"email": email, "mobile_number": phone})
+
         return render_template('dashboard.html', reports=user_reports)
     else:
         return redirect('/login')
+
+        # Find consultations associated with the user's lab results
+
+
+
 
 # Route for sending consultation
 @app.route('/send_consultation', methods=['POST'])
@@ -213,7 +261,8 @@ def doctor_dashboard():
         username = session['doctor_username']
         # Fetch consultations for this doctor
         consultations = consultations_collection.find({'doctor': username})
-        return render_template('doctor_dashboard.html', consultations=consultations)
+
+        return render_template('doctor_dashboard.htm', consultations=consultations)
     return redirect(url_for('doctor_login'))
 
 # Route for uploading PDF and adding remarks
@@ -228,16 +277,47 @@ def add_remarks(consultation_id):
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                 # Update consultation record with PDF URL and remarks
                 consultations_collection.update_one(
-                    {'r_id': consultation_id},
+                    {'report_id': consultation_id},
                     {'$set': {'pdf_url': filename, 'remarks': request.form['remarks']}}
                 )
+
                 return redirect(url_for('doctor_dashboard'))
     return redirect(url_for('doctor_login'))
 
 # Function to check if a filename has an allowed extension
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+@app.route('/report')
+def index1():
+    return render_template('index.html')
+@app.route('/lab_results', methods=['GET'])
+def get_lab_results():
+    report_id = request.args.get('r_id')
 
+    if report_id:
+        result = lab_results_collection.find_one({'r_id': report_id})
+        if result:
+            lab_result = {}
+
+            if 'url' in result:
+                lab_result['pdf_url'] = f"/pdf/{result['url']}"
+
+            if 'patient_name' in result:
+                lab_result['patient_name'] = result['patient_name']
+
+            if 'test_name' in result:
+                lab_result['test_name'] = result['test_name']
+
+            if 'status' in result:
+                lab_result['status'] = result['status']
+
+
+
+            return jsonify({'lab_result': lab_result}), 200
+        else:
+            return jsonify({'error': 'Report not found'}), 404
+    else:
+        return jsonify({'error': 'Report ID parameter is required'}), 400
 # Main function to run the app
 if __name__ == '__main__':
     app.run(debug=True)
