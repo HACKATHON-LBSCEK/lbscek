@@ -6,23 +6,32 @@
     <title>Patient Login</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: Gill Sans, sans-serif;
             background-color: #f4f4f4;
             margin: 0;
             padding: 0;
+            background-image: url("images/tom-claes-CfdzNybONzc-unsplash.jpg");
+            background-size: 100%;
+            display: flex;
+            justify-content: center;
+
+            height: 100vh;
         }
         .container {
             max-width: 400px;
-            margin: 50px auto;
             padding: 20px;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background-color: rgba(255, 255, 255, 0); /* Transparent background */
+
+            border:none;
+
+            top:30px;
+            padding-right:50px;
         }
         h2 {
             text-align: center;
             color: #008000;
             margin-bottom: 20px;
+            font-size:30px;
         }
         label {
             display: block;
@@ -37,6 +46,7 @@
             margin-bottom: 10px;
             border: 1px solid #ccc;
             border-radius: 4px;
+
         }
         button[type="submit"] {
             background-color: #008000;
@@ -47,6 +57,8 @@
             border-radius: 4px;
             cursor: pointer;
             width: 100%;
+            margin-left:8px;
+
         }
         button[type="submit"]:hover {
             background-color: #005600;
