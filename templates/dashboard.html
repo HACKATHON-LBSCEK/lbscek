@@ -17,7 +17,7 @@
                 {% endif %}
                 {% if report.status == 'completed' %}
                     <form action="/send_consultation" method="POST">
-                        <input type="hidden" name="report_id" value="{{ report._id }}">
+                        <input type="hidden" name="report_id" value="{{ report.r_id }}">
                         <select name="doctor">
                             <option value="d1">Doctor 1</option>
                             <option value="d2">Doctor 2</option>
@@ -32,10 +32,12 @@
 
     <h2>Consultations</h2>
     <ul>
-        {% for consultation in consultations %}
-            <li>
-                Report ID: {{ consultation.report_id }}, Doctor: {{ consultation.doctor }}, Status: {{ consultation.status }}
-            </li>
+        {% for report in reports1 %}
+           <li>
+    Report ID: {{ report.report_id }}, Doctor: {{ report.doctor }}, Status: {{ report.status }},
+    <a href="pdf/{{ report.pdf_url }}">PDF</a>
+</li>
+
         {% endfor %}
     </ul>
 </body>

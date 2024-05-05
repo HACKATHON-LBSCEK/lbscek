@@ -35,7 +35,7 @@ db = client['medical_lab']
 lab_results_collection = db['lab_results']
 labs_collection = db['labs']
 consultations_collection = db['consultations']
-
+r=db['consultations']
 # Define upload folder and allowed file extensions
 UPLOAD_FOLDER = 'pdf'
 ALLOWED_EXTENSIONS = {'pdf'}
@@ -98,7 +98,7 @@ def lab_login():
     return render_template('lab_login.html')
 
 # Route for lab dashboard
-@app.route('/')
+@app.route('/login')
 def index():
     return render_template('login.html')
 @app.route('/lab_dashboard')
@@ -216,8 +216,9 @@ def dashboard():
         email = session['email']
         phone = session['phone']
         user_reports = lab_results_collection.find({"email": email, "mobile_number": phone})
+        user_reports1 = r.find({"email": email, "mobile_number": phone})
 
-        return render_template('dashboard.html', reports=user_reports)
+        return render_template('dashboard.html', reports=user_reports,reports1=user_reports1)
     else:
         return redirect('/login')
 
@@ -235,7 +236,10 @@ def send_consultation():
         'report_id': report_id,
         'doctor': selected_doctor,
         'status': 'pending',
-        'timestamp': datetime.now()
+        'timestamp': datetime.now(),
+        'email':session['email'],
+        'mobile_number': session['phone']
+
     }
     consultations_collection.insert_one(consultation)
 
@@ -278,7 +282,7 @@ def add_remarks(consultation_id):
                 # Update consultation record with PDF URL and remarks
                 consultations_collection.update_one(
                     {'report_id': consultation_id},
-                    {'$set': {'pdf_url': filename, 'remarks': request.form['remarks']}}
+                    {'$set': {'pdf_url': filename, 'status':'approved','remarks': request.form['remarks']}}
                 )
 
                 return redirect(url_for('doctor_dashboard'))
