@@ -1,57 +1,55 @@
-from flask import Flask, request, jsonify, render_template, send_from_directory
-from pymongo import MongoClient
-from flask import Flask, request, render_template, redirect, url_for, session
+# Import necessary modules
+from flask import Flask, request, render_template, redirect, url_for, session, jsonify, send_from_directory
 from pymongo import MongoClient
 import random
-from flask import Flask, request, render_template, redirect, url_for, session, jsonify
+import string
 from werkzeug.utils import secure_filename
 import os
-from flask import Flask, render_template, request, redirect, url_for
-from pymongo import MongoClient
-from random import randint
-import string
-app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # Set your secret key here
-
-# MongoDB connection
-connection_string = 'mongodb+srv://shanidkattakal:Shanid%40786@cluster0.8mckznv.mongodb.net/medical_lab'
-
-# Create a MongoClient instance using the connection string
-client = MongoClient(connection_string)
-db = client['medical_lab']
-lab_results_collection = db['lab_results']
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from datetime import datetime
+
+# Initialize Flask app and set secret key
+app = Flask(__name__)
+app.secret_key = 'your_secret_key'
+
+# MongoDB connection
+connection_string = 'mongodb+srv://shanidkattakal:Shanid%40786@cluster0.8mckznv.mongodb.net/medical_lab'
+client = MongoClient(connection_string)
+db = client['medical_lab']
+lab_results_collection = db['lab_results']
+labs_collection = db['labs']
+consultations_collection = db['consultations']
+
+# Define upload folder and allowed file extensions
+UPLOAD_FOLDER = 'pdf'
+ALLOWED_EXTENSIONS = {'pdf'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Function to send OTP email
 def send_otp_email(email, otp):
-    # Email configuration
-    sender_email = 'shanidsulthan@gmail.com'  # Your Gmail address
-    sender_password = 'pvhtbatctnnuktke'  # Your Gmail password
+    sender_email = 'shanidsulthan@gmail.com'
+    sender_password = 'pvhtbatctnnuktke'
     subject = 'Your OTP for Patient Login'
     message = f'Your OTP is: {otp}'
 
-    # Create a MIMEText object to represent the email message
     msg = MIMEMultipart()
     msg['From'] = sender_email
     msg['To'] = email
     msg['Subject'] = subject
     msg.attach(MIMEText(message, 'plain'))
 
-    # Connect to Gmail SMTP server with debugging enabled
     with smtplib.SMTP('smtp.gmail.com', 587) as server:
-          # Enable debugging
-        server.starttls()  # Start TLS encryption
-        server.login(sender_email, sender_password)  # Login to Gmail SMTP server
-        server.sendmail(sender_email, email, msg.as_string())  # Send email
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.sendmail(sender_email, email, msg.as_string())
 
-@app.route('/report')
-def index1():
-    return render_template('index.html')
-users_collection = db['users']
-labs_collection = db['labs']
-reports_collection = db['reports']
+# Function to generate a random alphanumeric string
+def generate_random_string(length):
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
-# Lab login page
+# Route for lab login
 @app.route('/lab_login', methods=['GET', 'POST'])
 def lab_login():
     if request.method == 'POST':
@@ -64,72 +62,29 @@ def lab_login():
         else:
             return render_template('lab_login.html', message='Invalid username or password')
     return render_template('lab_login.html')
+
+# Route for lab dashboard
 @app.route('/lab_dashboard')
 def lab_dashboard():
     if 'lab_username' in session:
-        # Fetch reports for this lab
         lab_username = session['lab_username']
         lab_reports = lab_results_collection.find({'lab_username': lab_username})
         return render_template('lab_dashboard.html', lab_reports=lab_reports)
     return redirect(url_for('lab_login'))
-@app.route('/lab_results', methods=['GET'])
-def get_lab_results():
-    report_id = request.args.get('r_id')
 
-    if report_id:
-        result = lab_results_collection.find_one({'r_id': report_id})
-        if result:
-            lab_result = {}
-
-            if 'url' in result:
-                lab_result['pdf_url'] = f"/pdf/{result['url']}"
-
-            if 'patient_name' in result:
-                lab_result['patient_name'] = result['patient_name']
-
-            if 'test_name' in result:
-                lab_result['test_name'] = result['test_name']
-
-            if 'status' in result:
-                lab_result['status'] = result['status']
-
-
-
-            return jsonify({'lab_result': lab_result}), 200
-        else:
-            return jsonify({'error': 'Report not found'}), 404
-    else:
-        return jsonify({'error': 'Report ID parameter is required'}), 400
-UPLOAD_FOLDER = 'pdf'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-# Define allowed extensions for file uploads
-ALLOWED_EXTENSIONS = {'pdf'}
-
-# Your MongoDB connection and other necessary code here...
-
-# Route to handle PDF upload
+# Route for uploading result
 @app.route('/upload_result/<report_id>', methods=['POST'])
 def upload_result(report_id):
     if 'lab_username' in session:
-        # Authenticate lab user
         lab_username = session['lab_username']
-        # Check if the POST request has the file part
         if 'result' not in request.files:
             return jsonify({'error': 'No file part'})
         file = request.files['result']
-        # If user does not select file, browser also submits an empty part without filename
         if file.filename == '':
             return jsonify({'error': 'No selected file'})
-        if file and allowed_file(file.filename):
-            # Generate a random filename and save the file to the upload folder
-            import os
-            import secrets
-            from werkzeug.utils import secure_filename
-
-            random_filename = secure_filename(secrets.token_hex(12)) + '.pdf'
+        if file and file.filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS:
+            random_filename = secure_filename(os.path.splitext(file.filename)[0]) + '-' + generate_random_string(6) + '.pdf'
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], random_filename))
-            # Update the database with the PDF URL
             lab_results_collection.update_one({'r_id': report_id}, {'$set': {'url': random_filename}})
             lab_results_collection.update_one({'r_id': report_id}, {'$set': {'status': 'completed'}})
             return redirect(url_for('lab_dashboard'))
@@ -138,23 +93,7 @@ def upload_result(report_id):
     else:
         return redirect(url_for('lab_login'))
 
-# Function to check if a filename has an allowed extension
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-@app.route('/images/<path:image_name>')
-def serve_image(image_name):
-    return send_from_directory('images', image_name)
-from bson import ObjectId  # Import ObjectId for generating unique IDs
-
-import time
-import random
-import string
-
-# Function to generate a random alphanumeric string
-def generate_random_string(length):
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+# Route for searching reports
 @app.route('/search_reports', methods=['GET'])
 def search_reports():
     search_mobile = request.args.get('mobile')
@@ -165,95 +104,140 @@ def search_reports():
     if search_mobile:
         query['mobile_number'] = search_mobile
     if search_name:
-        query['patient_name'] = {'$regex': f'^{search_name}', '$options': 'i'}  # Case-insensitive search
+        query['patient_name'] = {'$regex': f'^{search_name}', '$options': 'i'}
     if search_email:
-        query['email'] = {'$regex': f'^{search_email}', '$options': 'i'}  # Case-insensitive search
+        query['email'] = {'$regex': f'^{search_email}', '$options': 'i'}
 
     results = list(lab_results_collection.find(query, {'_id': 0}))
     return jsonify({'results': results})
+
+# Route for adding a new report
 @app.route('/add_new_report', methods=['POST'])
 def add_new_report():
     if request.method == 'POST':
         data = request.json
         patient_name = data.get('patient_name')
         mobile_number = data.get('mobile_number')
-        email=data.get('email')
-        # Generate a unique alphanumeric report ID
-        timestamp = int(time.time())  # Get current timestamp
-        random_string = generate_random_string(10 - len(str(timestamp)))  # Generate random string to make total length 10
+        email = data.get('email')
+        timestamp = int(time.time())
+        random_string = generate_random_string(10 - len(str(timestamp)))
         report_id = str(timestamp) + random_string
 
-        # Create a new report in the database with status set to 'pending'
         new_report = {
-            'r_id': report_id,  # Include the unique report ID
+            'r_id': report_id,
             'patient_name': patient_name,
             'mobile_number': mobile_number,
             'status': 'pending',
             'lab_username': session.get('lab_username'),
-            'email' : email# Ensure 'lab_username' exists in session
+            'email': email
         }
-        # Insert the new report into your MongoDB collection
         lab_results_collection.insert_one(new_report)
-
         return jsonify({'message': 'New report added successfully', 'r_id': report_id}), 200
     else:
         return jsonify({'error': 'Method not allowed'}), 405
 
-@app.route('/pdf/<path:filename>')
-def pdf(filename):
-    return send_from_directory('pdf', filename)
-
-
-
-otp_storage = {}
-
-@app.route('/')
-def index():
-    return render_template('login.html')
-
+# Route for patient login
 @app.route('/login', methods=['POST'])
 def login():
     email = request.form['email']
     phone = request.form['phone']
-
-    # Check if email and phone exist in the reports collection
     user_report = lab_results_collection.find_one({"email": email, "mobile_number": phone})
 
     if user_report:
-        # Generate OTP and store it (replace this with a more secure method)
         otp = randint(100000, 999999)
         otp_storage[email] = otp
-
+        session['email'] = email
+        session['phone'] = phone
+        session['otp'] = otp
         send_otp_email(email, otp)
-
-        # Redirect to email OTP page
         return redirect(url_for('verify_otp', email=email))
     else:
-        # User not found, redirect back to login page
-        return jsonify({'results': "eror"})
+        return jsonify({'results': "error"})
 
-
+# Route for verifying OTP
 @app.route('/verify_otp/<email>', methods=['GET', 'POST'])
 def verify_otp(email):
     if request.method == 'POST':
         otp = int(request.form['otp'])
-
-        # Verify OTP
         stored_otp = otp_storage.get(email)
         if stored_otp and otp == stored_otp:
-            # Successful OTP verification, redirect to dashboard
             return redirect(url_for('dashboard'))
         else:
-            # Invalid OTP, redirect back to email OTP page
             return redirect(url_for('verify_otp', email=email))
     else:
-        # Render email OTP verification page
         return render_template('verify_otp.html', email=email)
 
+# Route for patient dashboard
 @app.route('/dashboard')
 def dashboard():
-    # Render dashboard template or perform any other action for authenticated users
-    return "Welcome to the patient dashboard!"
+    if 'email' in session and 'phone' in session:
+        email = session['email']
+        phone = session['phone']
+        user_reports = lab_results_collection.find({"email": email, "mobile_number": phone})
+        return render_template('dashboard.html', reports=user_reports)
+    else:
+        return redirect('/login')
 
+# Route for sending consultation
+@app.route('/send_consultation', methods=['POST'])
+def send_consultation():
+    report_id = request.form['report_id']
+    selected_doctor = request.form['doctor']
+    consultation = {
+        'report_id': report_id,
+        'doctor': selected_doctor,
+        'status': 'pending',
+        'timestamp': datetime.now()
+    }
+    consultations_collection.insert_one(consultation)
+
+    return redirect(url_for('dashboard'))
+@app.route('/doctor_login', methods=['GET', 'POST'])
+def doctor_login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        # Assuming you have a 'doctors' collection
+        doctor = db.doctors.find_one({'username': username, 'password': password})
+        if doctor:
+            session['doctor_username'] = username
+            return redirect(url_for('doctor_dashboard'))
+        else:
+            return render_template('doctor_login.html', message='Invalid username or password')
+    return render_template('doctor_login.html')
+
+# Route for doctor dashboard
+@app.route('/doctor_dashboard')
+def doctor_dashboard():
+    if 'doctor_username' in session:
+        username = session['doctor_username']
+        # Fetch consultations for this doctor
+        consultations = consultations_collection.find({'doctor': username})
+        return render_template('doctor_dashboard.html', consultations=consultations)
+    return redirect(url_for('doctor_login'))
+
+# Route for uploading PDF and adding remarks
+@app.route('/add_remarks/<consultation_id>', methods=['POST'])
+def add_remarks(consultation_id):
+    if 'doctor_username' in session:
+        username = session['doctor_username']
+        if 'file' in request.files:
+            file = request.files['file']
+            if file and file.filename != '' and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                # Update consultation record with PDF URL and remarks
+                consultations_collection.update_one(
+                    {'r_id': consultation_id},
+                    {'$set': {'pdf_url': filename, 'remarks': request.form['remarks']}}
+                )
+                return redirect(url_for('doctor_dashboard'))
+    return redirect(url_for('doctor_login'))
+
+# Function to check if a filename has an allowed extension
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# Main function to run the app
 if __name__ == '__main__':
     app.run(debug=True)

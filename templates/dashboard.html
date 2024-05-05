@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Dashboard</title>
+</head>
+<body>
+    <h1>Patient Dashboard</h1>
+    <ul>
+        {% for report in reports %}
+            <li>
+                Report ID: {{ report._id }}, Patient: {{ report.patient_name }}, Status: {{ report.status }},
+                {% if report.status == 'pending' %}
+                    <a href="/pdf/{{ report.url }}">View PDF</a>
+                {% endif %}
+                {% if report.status == 'completed' %}
+                    <form action="/send_consultation" method="POST">
+                        <input type="hidden" name="report_id" value="{{ report._id }}">
+                        <select name="doctor">
+                            <option value="doctor1">Doctor 1</option>
+                            <option value="doctor2">Doctor 2</option>
+                            <!-- Add other doctors dynamically -->
+                        </select>
+                        <button type="submit">Send for Consultation</button>
+                    </form>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

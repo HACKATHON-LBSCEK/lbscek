@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard</title>
+</head>
+<body>
+    <h1>Doctor Dashboard</h1>
+    <ul>
+        {% for consultation in consultations %}
+            <li>
+                Consultation ID: {{ consultation._id }}, Patient: {{ consultation.patient }},
+                <a href="/pdf/{{ consultation.pdf_url }}">View PDF</a><br>
+                Remarks: {{ consultation.remarks }}
+                <form action="/add_remarks/{{ consultation._id }}" method="POST" enctype="multipart/form-data">
+                    <input type="file" name="file" accept=".pdf"><br>
+                    <textarea name="remarks" placeholder="Add remarks"></textarea><br>
+                    <button type="submit">Submit</button>
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
